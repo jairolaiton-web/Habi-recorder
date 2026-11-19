@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HABI RECORDER</title>
+    <!-- Logo SVG con tamaño maximizado para la pestaña -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%237c00ff'/%3E%3Cg transform='translate(0, -10) scale(1.240)' transform-origin='center'%3E%3Cpath d='M256 100 C270 100 282 108 385 208 C415 237 420 252 420 290 L420 370 C420 405 395 420 360 420 L152 420 C117 420 92 405 92 370 L92 290 C92 252 97 237 127 208 C230 108 242 100 256 100 Z' fill='%23ffffff'/%3E%3Ccircle cx='388' cy='145' r='22' fill='%23ff5232'/%3E%3Ctext x='256' y='355' font-family='Arial, Helvetica, sans-serif' font-weight='900' font-size='115' fill='%237c00ff' text-anchor='middle' letter-spacing='-4'%3Ehabi%3C/text%3E%3C/g%3E%3C/svg%3E">
+
+    <style>
+/* === FONDO Y ANIMACIÓN EFECTO AGUA EN TONOS GRISES === */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: radial-gradient(circle at 50% 50%, #374151 0%, #1f2937 50%, #111827 85%, #030712 100%);
+    background-size: 400% 400%;
+    animation: efectoAgua 8s ease-in-out infinite alternate;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    box-sizing: border-box;
+    position: relative;
+    overflow-x: hidden;
+}
+        body.pip-window {
+            background: radial-gradient(circle at 50% 50%, #374151 0%, #1f2937 50%, #111827 85%, #030712 100%);
+            background-size: 400% 400%;
+            animation: efectoAgua 12s ease-in-out infinite alternate;
+        }
+
+        @keyframes efectoAgua {
+            0% { background-position: 0% 30%; }
+            50% { background-position: 100% 70%; }
+            100% { background-position: 30% 100%; }
+        }
+
+        /* === ELEMENTO SEGUIDOR DE CURSOR (CIRCLE GLASS) === */
+        .large.centered.row {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .circle {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1.5px solid rgba(255, 255, 255, 0.45);
+            border-radius: 50%;
+            box-shadow: 0 8px 32px rgba(140, 43, 226, 0.4);
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            will-change: transform;
+        }
+
+        .small.centered.row {
+            margin-bottom: 12px;
+        }
+
+        .coords {
+            display: inline-block;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.9);
+            letter-spacing: 0.5px;
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 3px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        /* === CONTENEDOR PRINCIPAL GLASSMORPHISM === */
+        .container {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            max-width: 320px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        h3 { 
+            margin-top: 0; 
+            color: #ffffff; 
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 6px 16px;
+            border: 2px solid rgba(157, 78, 221, 0.5);
+            background: rgba(157, 78, 221, 0.15);
+            border-radius: 12px;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 0 12px rgba(157, 78, 221, 0.3);
+        }
+
+        .habi-text {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dot-red {
+            position: absolute;
+            top: 2px;
+            right: 1px;
+            width: 5px;
+            height: 5px;
+            background-color: #ff3b30;
+            border-radius: 50%;
+            box-shadow: 0 0 6px #ff3b30;
+        }
+
+        /* Lente de cámara redondo integrando la letra O */
+        .camera-lens-o {
+            width: 0.85em;
+            height: 0.85em;
+            display: inline-block;
+            vertical-align: middle;
+            margin: 0 -5px;
+        }
+
+        /* === BOTONES GLASSMORPHISM === */
+        .permisos-btn, .pip-btn, .btn-general, .btn-completo, .btn-stop-completo, .stop-btn, .btn-zona, .item-descarga {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+        }
+
+        .permisos-btn {
+            background: rgba(40, 167, 69, 0.4);
+            color: #ffffff;
+            border: 1px solid rgba(40, 167, 69, 0.6);
+            padding: 12px;
+            width: 100%;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+        .permisos-btn:hover { background: rgba(40, 167, 69, 0.6); }
+        .permisos-btn.listo {
+            background: rgba(25, 135, 84, 0.5);
+            border-color: rgba(25, 135, 84, 0.8);
+        }
+
+        .pip-window .permisos-btn { display: none !important; }
+
+        .pip-btn {
+            background: rgba(99, 0, 204, 0.45);
+            color: #ffffff;
+            border: 1px solid rgba(99, 0, 204, 0.6);
+            padding: 10px;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        .pip-btn:hover { background: rgba(99, 0, 204, 0.75); }
+
+        .seccion-general, .seccion-completo {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 12px;
+        }
+        .seccion-completo { display: flex; gap: 8px; }
+
+        .btn-general, .btn-completo {
+            background: rgba(99, 0, 204, 0.45);
+            color: #ffffff;
+            border: 1px solid rgba(140, 43, 226, 0.6);
+            padding: 10px;
+            width: 100%;
+            font-size: 0.9rem;
+        }
+        .btn-completo { flex: 1; }
+        .btn-general:hover, .btn-completo:hover { background: rgba(99, 0, 204, 0.7); }
+
+        .btn-general.grabando {
+            background: rgba(217, 83, 79, 0.7);
+            border-color: rgba(217, 83, 79, 0.9);
+            animation: desvanecerRojo 1.5s infinite alternate ease-in-out;
+        }
+        @keyframes desvanecerRojo {
+            0% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        .btn-stop-completo, .stop-btn {
+            background: rgba(220, 53, 69, 0.45);
+            color: white;
+            border: 1px solid rgba(220, 53, 69, 0.6);
+        }
+        .btn-stop-completo { padding: 10px 14px; font-size: 0.9rem; }
+        .stop-btn {
+            padding: 12px;
+            width: 100%;
+            margin-top: 12px;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-stop-completo:hover:not(:disabled), .stop-btn:hover:not(:disabled) {
+            background: rgba(220, 53, 69, 0.7);
+        }
+        .btn-stop-completo:disabled, .stop-btn:disabled {
+            background: rgba(108, 117, 125, 0.2);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.4);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .grid-zonas {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+        
+        .btn-zona {
+            position: relative;
+            background: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .btn-zona:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.45);
+        }
+        
+        .btn-texto {
+            position: relative;
+            z-index: 3;
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .btn-zona.grabando {
+            background: rgba(99, 0, 204, 0.7) !important;
+            border-color: rgba(255, 255, 255, 0.6) !important;
+            color: white !important;
+            animation: desvanecerMorado 1.5s infinite alternate ease-in-out;
+        }
+
+        @keyframes desvanecerMorado {
+            0% { opacity: 1; background: rgba(99, 0, 204, 0.8) !important; }
+            100% { opacity: 0.55; background: rgba(140, 43, 226, 0.8) !important; }
+        }
+
+        .btn-zona.procesando {
+            background: rgba(255, 255, 255, 0.2) !important;
+            color: #6300CC !important;
+            animation: none !important;
+        }
+
+        .btn-zona .barra-progreso {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0%;
+            background-color: rgba(99, 0, 204, 0.85) !important;
+            z-index: 2;
+            transition: width 0.1s linear;
+        }
+
+        .btn-zona.procesando .btn-texto { color: #6300CC; }
+
+        .info-nota {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.75);
+            margin-top: 12px;
+        }
+
+        .seccion-historial {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: left;
+        }
+        .historial-titulo {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+        .lista-descargas {
+            max-height: 220px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .item-descarga {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            padding: 5px 8px;
+            font-size: 0.75rem;
+        }
+        .btn-redescargar {
+            background: rgba(0, 123, 255, 0.5);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 3px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        .btn-redescargar:hover { background: rgba(0, 123, 255, 0.8); }
+        .acciones-item { display: flex; gap: 4px; align-items: center; }
+        .btn-borrar {
+            background: rgba(220, 53, 69, 0.45);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 3px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+        .btn-borrar:hover { background: rgba(220, 53, 69, 0.8); }
+    </style>
+</head>
+<body>
+
+<!-- Elemento Círculo Interactivo Glass -->
+<div class="large centered row">
+  <div class="col">
+    <div class="circle" id="animatableCircle"></div>
+  </div>
+</div>
+
+<div class="container" id="contenidoGrabador">
+    <div class="small centered row">
+    </div>
+
+    <h3>
+        <span class="habi-text">HAB<span style="position: relative;">I<span class="dot-red"></span></span></span> 
+        REC<svg class="camera-lens-o" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <!-- Anillos exteriores del cuerpo del lente -->
+            <circle cx="50" cy="50" r="48" fill="#1e1e24" stroke="#9d4edd" stroke-width="3"/>
+            <circle cx="50" cy="50" r="41" fill="#111115" stroke="#444450" stroke-width="2"/>
+            <circle cx="50" cy="50" r="34" fill="#09090d" stroke="#22222b" stroke-width="2"/>
+            
+            <!-- Vidrio del lente con degradado -->
+            <defs>
+                <radialGradient id="lensGlass" cx="40%" cy="40%" r="60%">
+                    <stop offset="0%" stop-color="#00d4ff"/>
+                    <stop offset="40%" stop-color="#092040"/>
+                    <stop offset="85%" stop-color="#050814"/>
+                    <stop offset="100%" stop-color="#7c00ff"/>
+                </radialGradient>
+            </defs>
+            <circle cx="50" cy="50" r="28" fill="url(#lensGlass)"/>
+            
+            <!-- Apertura del diafragma interno -->
+            <circle cx="50" cy="50" r="14" fill="#020307" stroke="#00d4ff" stroke-width="0.8" opacity="0.8"/>
+            <circle cx="50" cy="50" r="7" fill="#000000"/>
+
+            <!-- Reflejos de luz en el lente -->
+            <path d="M 32 28 A 22 22 0 0 1 68 28 A 22 18 0 0 0 32 28 Z" fill="#ffffff" opacity="0.4"/>
+            <circle cx="66" cy="66" r="3" fill="#ffffff" opacity="0.3"/>
+        </svg>RDER
+    </h3>
+    
+    <button class="permisos-btn" id="btnPermisos">🎙️ Activar Permisos y Pantalla</button>
+    <button class="pip-btn" id="btnFlotante">✨ Activar Ventana Flotante</button>
+    
+    <div class="seccion-completo">
+        <button class="btn-completo" id="btnVideoCompleto">🎥 Iniciar Video Completo</button>
+        <button class="btn-stop-completo" id="btnStopCompleto" disabled>⏹️</button>
+    </div>
+
+    <div class="seccion-general">
+        <button class="btn-general" id="btnRecorridoGeneral">📹 Iniciar Recorrido General</button>
+    </div>
+
+    <div class="grid-zonas" id="contenedorZonas">
+        <button class="btn-zona" data-zona="Sala">
+            <div class="barra-progreso"></div>
+            <div class="btn-texto">🏠 Sala <span>🔴</span></div>
+        </button>
+        <button class="btn-zona" data-zona="Balcon">
+            <div class="barra-progreso"></div>
+            <div class="btn-texto">🌿 Balcón <span>🔴</span></div>
+        </button>
+        <button class="btn-zona" data-zona="Cocina">
+            <div class="barra-progreso"></div>
+            <div class="btn-texto">🍳 Cocina <span>🔴</span></div>
+        </button>
+        <button class="btn-zona" data-zona="Patio">
+            <div class="barra-progreso"></div>
+            <div class="btn-texto">🪴 Patio <span>🔴</span></div>
+        </button>
+        <button class="btn-zona" data-zona="Habitacion 1">
+            <div class="barra-progreso"></div>
+            <div class="btn-texto">🛏️ Habitación 1 <span>🔴</span></div>
+        </button>
+        <button class="btn-zona" data-zona="Habitacion 2">
+            <div class="barra-progreso"></div>
+            <div class="btn-texto">🛏️ Habitación 2 <span>🔴</span></div>
+        </button>
+        <button class="btn-zona" data-zona="Habitacion 3">
+            <div class="barra-progreso"></div>
+            <div class="btn-texto">🛏️ Habitación 3 <span>🔴</span></div>
+        </button>
+        <button class="btn-zona" data-zona="Baño Medio">
+            <div class="barra-progreso"></div>
+            <div class="btn-texto">🚽 Baño Medio <span>🔴</span></div>
+        </button>
+        <button class="btn-zona" data-zona="Baño 1">
+            <div class="barra-progreso"></div>
+            <div class="btn-texto">🚿 Baño 1 <span>🔴</span></div>
+        </button>
+        <button class="btn-zona" data-zona="Baño 2">
+            <div class="barra-progreso"></div>
+            <div class="btn-texto">🚿 Baño 2 <span>🔴</span></div>
+        </button>
+        <button class="btn-zona" data-zona="Baño 3">
+            <div class="barra-progreso"></div>
+            <div class="btn-texto">🚿 Baño 3 <span>🔴</span></div>
+        </button>
+        <button class="btn-zona" data-zona="Terraza">
+            <div class="barra-progreso"></div>
+            <div class="btn-texto">☀️ Terraza <span>🔴</span></div>
+        </button>
+        <button class="btn-zona" data-zona="Parqueadero">
+            <div class="barra-progreso"></div>
+            <div class="btn-texto">🚗 Parqueadero <span>🔴</span></div>
+        </button>
+        <button class="btn-zona" data-zona="Deposito">
+            <div class="barra-progreso"></div>
+            <div class="btn-texto">📦 Depósito <span>🔴</span></div>
+        </button>
+    </div>
+
+    <button class="stop-btn" id="btnParar" disabled>⏹️ Parar y Descargar Última Zona</button>
+    
+    <p class="info-nota">Grabación por zona activa. Descarga automática al cambiar de zona.</p>
+
+    <!-- Historial de grabaciones -->
+    <div class="seccion-historial">
+        <div class="historial-titulo">📁 Últimos videos grabados (se conservan al cerrar o recargar):</div>
+        <div class="lista-descargas" id="listaDescargas"></div>
+    </div>
+</div>
+
+<script>
+    /* === SISTEMA DE ALMACENAMIENTO SEGURO Y PREVENCIÓN DE PÉRDIDAS === */
+    window.addEventListener('beforeunload', (e) => {
+        const grabandoZona = mediaRecorder && mediaRecorder.state === 'recording';
+        const grabandoGeneral = mediaRecorderGeneral && mediaRecorderGeneral.state === 'recording';
+        const grabandoCompleto = mediaRecorderCompleto && mediaRecorderCompleto.state === 'recording';
+
+        if (grabandoZona || grabandoGeneral || grabandoCompleto) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
+    function obtenerDB() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open('HabiRecorderDB', 2);
+            req.onupgradeneeded = () => {
+                const db = req.result;
+                if (!db.objectStoreNames.contains('respaldos')) db.createObjectStore('respaldos');
+                if (!db.objectStoreNames.contains('videos')) db.createObjectStore('videos', { keyPath: 'id' });
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    async function guardarChunkRespaldo(tipo, chunk) {
+        try {
+            const db = await obtenerDB();
+            const tx = db.transaction('respaldos', 'readwrite');
+            const store = tx.objectStore('respaldos');
+            store.put({ tipo: tipo, data: chunk, timestamp: Date.now() }, `${tipo}_${Date.now()}`);
+        } catch(e) {
+            console.error("Error respaldando chunk:", e);
+        }
+    }
+
+    async function limpiarRespaldo(tipo) {
+        try {
+            const db = await obtenerDB();
+            const tx = db.transaction('respaldos', 'readwrite');
+            const store = tx.objectStore('respaldos');
+            const req = store.openCursor();
+            req.onsuccess = (e) => {
+                const cursor = e.target.result;
+                if (cursor) {
+                    if (cursor.value.tipo === tipo) store.delete(cursor.key);
+                    cursor.continue();
+                }
+            };
+        } catch(e) {}
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        await cargarHistorialGuardado();
+        try {
+            const db = await obtenerDB();
+            const tx = db.transaction('respaldos', 'readonly');
+            const store = tx.objectStore('respaldos');
+            const req = store.getAll();
+
+            req.onsuccess = () => {
+                const items = req.result;
+                if (items && items.length > 0) {
+                    const agrupados = {};
+                    items.forEach(it => {
+                        if (!agrupados[it.tipo]) agrupados[it.tipo] = [];
+                        agrupados[it.tipo].push(it.data);
+                    });
+
+                    for (const tipo in agrupados) {
+                        const blob = new Blob(agrupados[tipo], { type: 'video/webm' });
+                        if (blob.size > 0) {
+                            descargarVideo(blob, `${tipo}_Recuperado`);
+                        }
+                        limpiarRespaldo(tipo);
+                    }
+                    alert("⚠️ Se detectaron grabaciones pendientes de una sesión anterior no cerrada y se recuperaron en la lista.");
+                }
+            };
+        } catch (e) {}
+    });
+
+    /* === LÓGICA DE ANIMACIÓN DEL CÍRCULO === */
+    const $circle = document.getElementById('animatableCircle');
+    const $x = document.getElementById('coordX');
+    const $y = document.getElementById('coordY');
+
+    let targetX = window.innerWidth / 2;
+    let targetY = window.innerHeight / 2;
+    let currentX = targetX;
+    let currentY = targetY;
+
+    window.addEventListener('mousemove', (e) => {
+        targetX = e.clientX;
+        targetY = e.clientY;
+    });
+
+    function animateCircle() {
+        currentX += (targetX - currentX) * 0.1;
+        currentY += (targetY - currentY) * 0.1;
+
+        if ($circle) {$circle.style.transform = `translate3d(${currentX - 30}px, ${currentY - 30}px, 0)`;
+        }
+
+        if ($x &&$y) {
+            $x.textContent = currentX.toFixed(2);$y.textContent = currentY.toFixed(2);
+        }
+
+        requestAnimationFrame(animateCircle);
+    }
+    animateCircle();
+
+    /* === LÓGICA DE GRABACIÓN DE PANTALLA Y VENTANA PIP === */
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let bytesAcumuladosZona = 0;
+    let screenStream = null;
+    let micStream = null;
+    let audioContextGlobal = null;
+    let audioDestinationGlobal = null;
+    let botonActivo = null;
+    let zonaActual = '';
+
+    let mediaRecorderGeneral = null;
+    let chunksGeneral = [];
+    let bytesAcumuladosGeneral = 0;
+    const MAX_BYTES = 49 * 1024 * 1024;
+
+    let mediaRecorderCompleto = null;
+    let chunksCompleto = [];
+
+    const btnFlotante = document.getElementById('btnFlotante');
+    const btnPermisos = document.getElementById('btnPermisos');
+    const btnParar = document.getElementById('btnParar');
+    const btnRecorridoGeneral = document.getElementById('btnRecorridoGeneral');
+    const btnVideoCompleto = document.getElementById('btnVideoCompleto');
+    const btnStopCompleto = document.getElementById('btnStopCompleto');
+    const listaDescargas = document.getElementById('listaDescargas');
+
+    function manejarClicGlobal(e) {
+        if (e.target.classList.contains('btn-redescargar')) {
+            const url = e.target.getAttribute('data-url');
+            const nombre = e.target.getAttribute('data-nombre');
+            ejecutarDescarga(url, nombre);
+            return;
+        }
+
+        if (e.target.classList.contains('btn-borrar')) {
+            borrarVideoGuardado(e.target.getAttribute('data-id'), e.target.closest('.item-descarga'));
+            return;
+        }
+
+        const btnZona = e.target.closest('.btn-zona');
+        if (btnZona) {
+            const nombreZona = btnZona.getAttribute('data-zona');
+            iniciarGrabacionZona(nombreZona, btnZona);
+            return;
+        }
+
+        if (e.target.closest('#btnPermisos')) {
+            prepararPermisos();
+            return;
+        }
+
+        if (e.target.closest('#btnParar')) {
+            detenerGrabacionManual();
+            return;
+        }
+
+        if (e.target.closest('#btnRecorridoGeneral')) {
+            toggleRecorridoGeneral();
+            return;
+        }
+
+        if (e.target.closest('#btnVideoCompleto')) {
+            iniciarVideoCompleto();
+            return;
+        }
+
+        if (e.target.closest('#btnStopCompleto')) {
+            detenerVideoCompleto();
+            return;
+        }
+    }
+
+    document.addEventListener('click', manejarClicGlobal);
+
+    if ('documentPictureInPicture' in window) {
+        btnFlotante.addEventListener('click', async () => {
+            const contenido = document.getElementById('contenidoGrabador');
+            
+            const pipWindow = await window.documentPictureInPicture.requestWindow({
+                width: 340,
+                height: 680,
+            });
+
+            [...document.styleSheets].forEach((styleSheet) => {
+                try {
+                    const cssTexts = [...styleSheet.cssRules].map((rule) => rule.cssText).join(' ');
+                    const style = document.createElement('style');
+                    style.textContent = cssTexts;
+                    pipWindow.document.head.appendChild(style);
+                } catch (e) {
+                    const link = document.createElement('link');
+                    link.rel = 'stylesheet';
+                    link.href = styleSheet.href;
+                    pipWindow.document.head.appendChild(link);
+                }
+            });
+
+            pipWindow.document.body.classList.add('pip-window');
+            pipWindow.document.body.appendChild(contenido);
+            btnFlotante.style.display = 'none';
+
+            pipWindow.document.addEventListener('click', manejarClicGlobal);
+
+            pipWindow.addEventListener('pagehide', () => {
+                document.body.appendChild(contenido);
+                btnFlotante.style.display = 'block';
+            });
+        });
+    } else {
+        btnFlotante.innerText = "Ventana flotante no soportada";
+        btnFlotante.disabled = true;
+    }
+
+    async function prepararPermisos() {
+        try {
+            if (!micStream || !micStream.active) {
+                micStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: { 
+                        echoCancellation: true, 
+                        noiseSuppression: true 
+                    } 
+                });
+            }
+
+            if (!screenStream || !screenStream.active) {
+                screenStream = await navigator.mediaDevices.getDisplayMedia({ 
+                    video: true, 
+                    audio: {
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: false
+                    } 
+                });
+
+                const audioTracksSistema = screenStream.getAudioTracks();
+                if (audioTracksSistema.length === 0) {
+                    alert("⚠️ ¡Atención! No seleccionaste compartir el audio del sistema. Al compartir la pantalla, asegúrate de marcar 'Compartir audio del sistema' y seleccionar 'Toda la pantalla'.");
+                }
+
+                screenStream.getVideoTracks()[0].onended = () => {
+                    detenerGrabacionManual();
+                    detenerRecorridoGeneralCompleto();
+                    detenerVideoCompleto();
+                    resetearBotonPermisos();
+                };
+            }
+
+            if (audioContextGlobal) {
+                try { await audioContextGlobal.close(); } catch(e) {}
+            }
+
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            audioContextGlobal = new AudioCtx();
+            audioDestinationGlobal = audioContextGlobal.createMediaStreamDestination();
+
+            if (screenStream.getAudioTracks().length > 0) {
+                const sourceScreen = audioContextGlobal.createMediaStreamSource(screenStream);
+                const screenGain = audioContextGlobal.createGain();
+                screenGain.gain.value = 1.0;
+                sourceScreen.connect(screenGain);
+                screenGain.connect(audioDestinationGlobal);
+            }
+
+            if (micStream.getAudioTracks().length > 0) {
+                const sourceMic = audioContextGlobal.createMediaStreamSource(micStream);
+                const micGain = audioContextGlobal.createGain();
+                micGain.gain.value = 1.0;
+                sourceMic.connect(micGain);
+                micGain.connect(audioDestinationGlobal);
+            }
+
+            if (audioContextGlobal.state === 'suspended') {
+                await audioContextGlobal.resume();
+            }
+
+            btnPermisos.innerText = "✅ Permisos Conectados";
+            btnPermisos.classList.add('listo');
+            return true;
+        } catch (err) {
+            console.error("Error al obtener permisos:", err);
+            alert("Error al obtener permisos de pantalla/micrófono. Asegúrate de permitir el acceso.");
+            resetearBotonPermisos();
+            return false;
+        }
+    }
+
+    function resetearBotonPermisos() {
+        btnPermisos.innerText = "🎙️ Activar Permisos y Pantalla";
+        btnPermisos.classList.remove('listo');
+        screenStream = null;
+        micStream = null;
+        if (audioContextGlobal) {
+            try { audioContextGlobal.close(); } catch(e) {}
+            audioContextGlobal = null;
+        }
+    }
+
+    async function iniciarGrabacionZona(nombreZona, botonPresionado) {
+        if (botonPresionado.classList.contains('procesando')) return;
+        if (botonActivo === botonPresionado && mediaRecorder && mediaRecorder.state === 'recording') return;
+
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            await detenerYProcesarGrabacionAnterior();
+        }
+
+        if (!micStream || !micStream.active || !screenStream || !screenStream.active || !audioContextGlobal) {
+            const listo = await prepararPermisos();
+            if (!listo) return;
+        }
+
+        try {
+            zonaActual = nombreZona;
+            recordedChunks = [];
+            bytesAcumuladosZona = 0;
+            limpiarRespaldo('Zona_' + zonaActual);
+
+            const audioMezcladoTrack = audioDestinationGlobal.stream.getAudioTracks()[0];
+            const videoTrack = screenStream.getVideoTracks()[0];
+
+            const streamFinal = new MediaStream();
+            streamFinal.addTrack(videoTrack);
+            if (audioMezcladoTrack) {
+                streamFinal.addTrack(audioMezcladoTrack);
+            }
+
+            let mimeType = 'video/webm;codecs=vp8,opus';
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+                mimeType = 'video/webm';
+            }
+
+            const opcionesGrabacion = {
+                mimeType: mimeType,
+                videoBitsPerSecond: 2500000,
+                audioBitsPerSecond: 128000
+            };
+
+            mediaRecorder = new MediaRecorder(streamFinal, opcionesGrabacion);
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data && e.data.size > 0) {
+                    recordedChunks.push(e.data);
+                    bytesAcumuladosZona += e.data.size;
+                    guardarChunkRespaldo('Zona_' + zonaActual, e.data);
+
+                    // Si la zona activa es Cocina y supera el límite de 49MB, se corta y descarga
+                    if (zonaActual === 'Cocina' && bytesAcumuladosZona >= MAX_BYTES) {
+                        detenerGrabacionManual();
+                    }
+                }
+            };
+
+            mediaRecorder.start(200);
+            
+            botonActivo = botonPresionado;
+            botonActivo.classList.remove('procesando');
+            botonActivo.classList.add('grabando');
+            actualizarIconoBoton(botonActivo, '⏳');
+
+            btnParar.disabled = false;
+
+        } catch (err) {
+            console.error("Error al iniciar grabación:", err);
+        }
+    }
+
+    function detenerYProcesarGrabacionAnterior() {
+        return new Promise((resolve) => {
+            if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+                resolve();
+                return;
+            }
+
+            const rec = mediaRecorder;
+            const chunks = recordedChunks;
+            const zonaGuardar = zonaActual;
+            const btn = botonActivo;
+
+            mediaRecorder = null;
+            recordedChunks = [];
+            bytesAcumuladosZona = 0;
+            botonActivo = null;
+
+            if (btn) {
+                btn.classList.remove('grabando');
+                btn.classList.add('procesando');
+                actualizarIconoBoton(btn, '⚙️️');
+            }
+
+            rec.onstop = () => {
+                const blobOriginal = new Blob(chunks, { type: 'video/webm' });
+                
+                if (blobOriginal.size > 0) {
+                    const barra = btn ? btn.querySelector('.barra-progreso') : null;
+                    if (barra) barra.style.width = '100%';
+                    
+                    descargarVideo(blobOriginal, zonaGuardar);
+                    limpiarRespaldo('Zona_' + zonaGuardar);
+                }
+
+                if (btn) {
+                    setTimeout(() => {
+                        btn.classList.remove('procesando');
+                        const barra = btn.querySelector('.barra-progreso');
+                        if (barra) barra.style.width = '0%';
+                        actualizarIconoBoton(btn, '🔴');
+                    }, 400);
+                }
+                resolve();
+            };
+
+            rec.stop();
+        });
+    }
+
+    async function detenerGrabacionManual() {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            await detenerYProcesarGrabacionAnterior();
+            btnParar.disabled = true;
+        }
+    }
+
+    async function toggleRecorridoGeneral() {
+        if (mediaRecorderGeneral && mediaRecorderGeneral.state === 'recording') {
+            detenerRecorridoGeneralCompleto();
+        } else {
+            if (!micStream || !micStream.active || !screenStream || !screenStream.active || !audioContextGlobal) {
+                const listo = await prepararPermisos();
+                if (!listo) return;
+            }
+
+            try {
+                chunksGeneral = [];
+                bytesAcumuladosGeneral = 0;
+                limpiarRespaldo('Recorrido_General');
+
+                const audioMezcladoTrack = audioDestinationGlobal.stream.getAudioTracks()[0];
+                const videoTrack = screenStream.getVideoTracks()[0];
+
+                const streamFinal = new MediaStream();
+                streamFinal.addTrack(videoTrack);
+                if (audioMezcladoTrack) {
+                    streamFinal.addTrack(audioMezcladoTrack);
+                }
+
+                let mimeType = 'video/webm;codecs=vp8,opus';
+                if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
+
+                mediaRecorderGeneral = new MediaRecorder(streamFinal, {
+                    mimeType: mimeType,
+                    videoBitsPerSecond: 2500000,
+                    audioBitsPerSecond: 128000
+                });
+
+                mediaRecorderGeneral.ondataavailable = (e) => {
+                    if (e.data && e.data.size > 0) {
+                        chunksGeneral.push(e.data);
+                        bytesAcumuladosGeneral += e.data.size;
+                        guardarChunkRespaldo('Recorrido_General', e.data);
+
+                        if (bytesAcumuladosGeneral >= MAX_BYTES) {
+                            detenerRecorridoGeneralCompleto();
+                        }
+                    }
+                };
+
+                mediaRecorderGeneral.start(200);
+
+                btnRecorridoGeneral.innerText = "⏹️ Detener Recorrido General";
+                btnRecorridoGeneral.classList.add('grabando');
+
+            } catch (err) {
+                console.error("Error al iniciar Recorrido General:", err);
+            }
+        }
+    }
+
+    function detenerRecorridoGeneralCompleto() {
+        if (!mediaRecorderGeneral) return;
+
+        const rec = mediaRecorderGeneral;
+        const chunks = chunksGeneral;
+        mediaRecorderGeneral = null;
+
+        rec.onstop = () => {
+            const blobGeneral = new Blob(chunks, { type: 'video/webm' });
+            if (blobGeneral.size > 0) {
+                descargarVideo(blobGeneral, 'Recorrido_General');
+                limpiarRespaldo('Recorrido_General');
+            }
+        };
+
+        if (rec.state !== 'inactive') {
+            rec.stop();
+        }
+
+        btnRecorridoGeneral.innerText = "📹 Iniciar Recorrido General";
+        btnRecorridoGeneral.classList.remove('grabando');
+    }
+
+    async function iniciarVideoCompleto() {
+        if (mediaRecorderCompleto && mediaRecorderCompleto.state === 'recording') return;
+
+        if (!micStream || !micStream.active || !screenStream || !screenStream.active || !audioContextGlobal) {
+            const listo = await prepararPermisos();
+            if (!listo) return;
+        }
+
+        try {
+            chunksCompleto = [];
+            limpiarRespaldo('Video_Completo');
+
+            const audioMezcladoTrack = audioDestinationGlobal.stream.getAudioTracks()[0];
+            const videoTrack = screenStream.getVideoTracks()[0];
+
+            const streamFinal = new MediaStream();
+            streamFinal.addTrack(videoTrack);
+            if (audioMezcladoTrack) {
+                streamFinal.addTrack(audioMezcladoTrack);
+            }
+
+            let mimeType = 'video/webm;codecs=vp8,opus';
+            if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
+
+            mediaRecorderCompleto = new MediaRecorder(streamFinal, {
+                mimeType: mimeType,
+                videoBitsPerSecond: 2500000,
+                audioBitsPerSecond: 128000
+            });
+
+            mediaRecorderCompleto.ondataavailable = (e) => {
+                if (e.data && e.data.size > 0) {
+                    chunksCompleto.push(e.data);
+                    guardarChunkRespaldo('Video_Completo', e.data);
+                }
+            };
+
+            mediaRecorderCompleto.start(1000);
+
+            btnVideoCompleto.innerText = "🔴 Grabando Video Completo";
+            btnVideoCompleto.classList.add('grabando');
+            btnStopCompleto.disabled = false;
+
+        } catch (err) {
+            console.error("Error al iniciar Video Completo:", err);
+        }
+    }
+
+    function detenerVideoCompleto() {
+        if (!mediaRecorderCompleto) return;
+
+        const rec = mediaRecorderCompleto;
+        const chunks = chunksCompleto;
+        mediaRecorderCompleto = null;
+
+        rec.onstop = () => {
+            const blobCompleto = new Blob(chunks, { type: 'video/webm' });
+            if (blobCompleto.size > 0) {
+                descargarVideo(blobCompleto, 'Video_Completo');
+                limpiarRespaldo('Video_Completo');
+            }
+        };
+
+        if (rec.state !== 'inactive') {
+            rec.stop();
+        }
+
+        btnVideoCompleto.innerText = "🎥 Iniciar Video Completo";
+        btnVideoCompleto.classList.remove('grabando');
+        btnStopCompleto.disabled = true;
+    }
+
+    function actualizarIconoBoton(boton, icono) {
+        if (!boton) return;
+        const span = boton.querySelector('span');
+        if (span) {
+            span.textContent = icono;
+        }
+    }
+
+    /* === HISTORIAL PERSISTENTE (sobrevive a cerrar o recargar la pestaña) === */
+    const MAX_VIDEOS_GUARDADOS = 100;
+
+    function textoHora(ts) {
+        const d = new Date(ts);
+        const hora = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        return d.toDateString() === new Date().toDateString()
+            ? hora
+            : d.toLocaleDateString([], { day: '2-digit', month: '2-digit' }) + ' ' + hora;
+    }
+
+    function agregarItemHistorial(reg, alFinal) {
+        const url = URL.createObjectURL(reg.blob);
+        const item = document.createElement('div');
+        item.className = 'item-descarga';
+        item.setAttribute('data-id', reg.id);
+        item.innerHTML = `
+            <span>📹 <strong>${reg.nombreZona}</strong> (${textoHora(reg.timestamp)})</span>
+            <span class="acciones-item">
+                <button class="btn-redescargar" data-url="${url}" data-nombre="${reg.nombreArchivo}">⬇️ Descargar</button>
+                <button class="btn-borrar" data-id="${reg.id}" title="Quitar de la lista">🗑️</button>
+            </span>
+        `;
+        if (alFinal) listaDescargas.appendChild(item); else listaDescargas.prepend(item);
+        return url;
+    }
+
+    async function guardarVideoTerminado(reg) {
+        try {
+            const db = await obtenerDB();
+            await new Promise((resolve, reject) => {
+                const tx = db.transaction('videos', 'readwrite');
+                tx.objectStore('videos').put(reg);
+                tx.oncomplete = resolve;
+                tx.onerror = () => reject(tx.error);
+            });
+            await podarVideosViejos();
+        } catch (e) {
+            console.error('No se pudo guardar el video en el historial:', e);
+        }
+    }
+
+    async function listarVideosGuardados() {
+        const db = await obtenerDB();
+        return new Promise((resolve, reject) => {
+            const req = db.transaction('videos', 'readonly').objectStore('videos').getAll();
+            req.onsuccess = () => resolve((req.result || []).sort((a, b) => b.timestamp - a.timestamp));
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    async function podarVideosViejos() {
+        const todos = await listarVideosGuardados();
+        if (todos.length <= MAX_VIDEOS_GUARDADOS) return;
+        const db = await obtenerDB();
+        const tx = db.transaction('videos', 'readwrite');
+        todos.slice(MAX_VIDEOS_GUARDADOS).forEach(v => tx.objectStore('videos').delete(v.id));
+        document.querySelectorAll('#listaDescargas .item-descarga').forEach(el => {
+            if (todos.slice(MAX_VIDEOS_GUARDADOS).some(v => v.id === el.getAttribute('data-id'))) el.remove();
+        });
+    }
+
+    async function borrarVideoGuardado(id, elemento) {
+        try {
+            const db = await obtenerDB();
+            db.transaction('videos', 'readwrite').objectStore('videos').delete(id);
+        } catch (e) {}
+        if (elemento) elemento.remove();
+    }
+
+    async function cargarHistorialGuardado() {
+        try {
+            const videos = await listarVideosGuardados();
+            videos.forEach(v => agregarItemHistorial(v, true));
+        } catch (e) {
+            console.error('No se pudo leer el historial guardado:', e);
+        }
+    }
+
+    function descargarVideo(blob, nombreZona) {
+        const nombreArchivo = `${nombreZona}.webm`;
+        const reg = {
+            id: 'v_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+            nombreZona: nombreZona,
+            nombreArchivo: nombreArchivo,
+            blob: blob,
+            timestamp: Date.now()
+        };
+        const url = agregarItemHistorial(reg, false);
+        ejecutarDescarga(url, nombreArchivo);
+        guardarVideoTerminado(reg);
+    }
+
+    function ejecutarDescarga(url, nombreArchivo) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = nombreArchivo;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+</script>
+
+</body>
+</html>
